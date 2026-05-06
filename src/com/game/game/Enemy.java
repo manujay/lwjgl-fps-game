@@ -2,7 +2,7 @@ package com.game.game;
 
 import org.joml.Vector3f;
 
-import com.game.engine.graphics.mesh.Entity;
+import com.game.engine.graphics.texture.Entity;
 
 public class Enemy {
 

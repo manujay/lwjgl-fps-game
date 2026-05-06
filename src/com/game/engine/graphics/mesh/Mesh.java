@@ -17,27 +17,29 @@ public class Mesh {
 		vaoId = GL30.glGenVertexArrays();
 		GL30.glBindVertexArray(vaoId);
 
-		// Position
+		// --- POSITION ---
 		int posVbo = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, posVbo);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, positions, GL15.GL_STATIC_DRAW);
 		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+		GL20.glEnableVertexAttribArray(0);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0); // ✅ FIX
 
-		// Texture
+		// --- TEX COORDS ---
 		int texVbo = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, texVbo);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, texCoords, GL15.GL_STATIC_DRAW);
 		GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
+		GL20.glEnableVertexAttribArray(1);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0); // ✅ FIX
 
-		// Normals
+		// --- NORMALS ---
 		int normVbo = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normVbo);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, normals, GL15.GL_STATIC_DRAW);
 		GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 0, 0);
-
-		GL20.glEnableVertexAttribArray(0);
-		GL20.glEnableVertexAttribArray(1);
 		GL20.glEnableVertexAttribArray(2);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0); // ✅ FIX
 
 		GL30.glBindVertexArray(0);
 	}
@@ -45,5 +47,6 @@ public class Mesh {
 	public void render() {
 		GL30.glBindVertexArray(vaoId);
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertexCount);
+		GL30.glBindVertexArray(0); // optional but cleaner
 	}
 }

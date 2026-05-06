@@ -1,47 +1,75 @@
 package com.game.engine.renderer;
 
+import java.util.List;
+
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import com.game.engine.graphics.Camera;
-import com.game.engine.graphics.mesh.Entity;
-import com.game.engine.shader.ShaderProgram;
+import com.game.engine.graphics.texture.Entity;
+import com.game.engine.shader.WorldShader;
 
-public class Renderer {
+public class Renderer extends AbstractRenderer {
+
+	private WorldShader shader;
+	private Camera camera;
+	private List<Entity> entities;
 
 	private Matrix4f projection;
 
 	public Renderer(int width, int height) {
-		float aspect = (float) width / height;
-
-		projection = new Matrix4f().perspective((float) Math.toRadians(70), aspect, 0.1f, 1000f);
+		projection = new Matrix4f().perspective((float) Math.toRadians(70.0f), (float) width / height, 0.01f, 1000.0f);
 	}
 
+	@Override
+	protected void begin() {
+		enableDepth();
+		disableBlend();
+		enableCulling();
+	}
+
+	// Clear screen (called externally once per frame)
 	public void clear() {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+	}
+
+	@Override
+	protected void end() {
+		// Nothing fancy needed here, but keep symmetry
+		enableDepth();
 	}
 
 	public Matrix4f getProjection() {
 		return projection;
 	}
 
-	public void render(Entity entity, ShaderProgram shader, Camera camera) {
+	@Override
+	protected void render() {
+
+		if (entities == null || shader == null || camera == null) {
+			return;
+		}
+
 		shader.bind();
 
-		// Projection
-		shader.setUniform("projection", projection);
+//		shader.setUniform("projection", projection);
+//		shader.setUniform("view", camera.getViewMatrix());
 
-		// View (camera)
-		shader.setUniform("view", camera.getViewMatrix());
+		for (Entity entity : entities) {
 
-		// Model
-		Matrix4f model = new Matrix4f().translate(entity.getPosition()).scale(0.2f); // adjust as needed
+//			shader.setUniform("model", entity.getModelMatrix());
+			shader.setMatrices(projection, camera.getViewMatrix(), entity.getModelMatrix());
 
-		shader.setUniform("model", model);
-
-		entity.getMesh().render();
+			entity.getMesh().render();
+		}
 
 		shader.unbind();
 	}
 
+	// Submit data for this frame
+	public void submit(List<Entity> entities, WorldShader shader, Camera camera) {
+		this.entities = entities;
+		this.shader = shader;
+		this.camera = camera;
+	}
 }
