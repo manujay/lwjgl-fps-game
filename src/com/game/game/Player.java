@@ -6,7 +6,7 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import com.game.engine.graphics.Camera;
-import com.game.engine.graphics.mesh.Entity;
+import com.game.engine.graphics.texture.Entity;
 
 public class Player {
 

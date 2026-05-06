@@ -91,12 +91,16 @@ public class Gun {
 			onShoot.run();
 		}
 
+		// emit gun shot
+		emitter.burst(origin, 25);
+
 		// Hit detection
 		for (Enemy enemy : enemies) {
 			if (Raycast.hit(origin, direction, enemy.getPosition(), 1.0f)) {
 				enemy.damage(damage);
 				if (getEmitter() != null) {
-					emitter.burst(origin, damage);
+					// emit hit burst
+					emitter.burst(enemy.getPosition(), 1000);
 				}
 			}
 		}

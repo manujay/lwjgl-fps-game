@@ -28,6 +28,14 @@ public class GameWindow {
 		return handle;
 	}
 
+	public int getHeight() {
+		return height;
+	}
+
+	public int getWidth() {
+		return width;
+	}
+
 	public void init() {
 		if (!GLFW.glfwInit()) {
 			throw new IllegalStateException("GLFW init failed");
