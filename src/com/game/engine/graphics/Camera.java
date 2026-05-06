@@ -8,14 +8,25 @@ public class Camera {
 	public float pitch, yaw;
 
 	public Vector3f getForward() {
-		return new Vector3f((float) Math.sin(yaw), 0, (float) -Math.cos(yaw)).normalize();
+	    return new Vector3f(
+	        (float) Math.sin(yaw),
+	        0,
+	        (float) -Math.cos(yaw)
+	    ).normalize();
 	}
 
 	public Vector3f getRight() {
-		return new Vector3f((float) Math.cos(yaw), 0, (float) Math.sin(yaw)).normalize();
+	    return new Vector3f(
+	        (float) Math.cos(yaw),
+	        0,
+	        (float) Math.sin(yaw)
+	    ).normalize();
 	}
 
 	public Matrix4f getViewMatrix() {
-		return new Matrix4f().rotateX(pitch).rotateY(yaw).translate(-position.x, -position.y, -position.z);
+	    return new Matrix4f()
+	        .rotateX(-pitch)
+	        .rotateY(-yaw)
+	        .translate(-position.x, -position.y, -position.z);
 	}
 }

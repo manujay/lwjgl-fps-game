@@ -3,17 +3,21 @@ package com.game.game;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.joml.Vector3f;
-
 import com.game.engine.graphics.Camera;
-import com.game.engine.graphics.mesh.Entity;
+import com.game.engine.graphics.light.DirectionalLight;
+import com.game.engine.graphics.material.Material;
 import com.game.engine.graphics.mesh.Mesh;
 import com.game.engine.graphics.mesh.MeshFactory;
+import com.game.engine.graphics.texture.Entity;
 import com.game.engine.graphics.texture.Texture;
 import com.game.engine.particles.ParticleEmitter;
 import com.game.engine.particles.ParticleRenderer;
 import com.game.engine.renderer.Renderer;
+import com.game.engine.shader.ParticleShader;
 import com.game.engine.shader.ShaderProgram;
+import com.game.engine.shader.UIShader;
+import com.game.engine.shader.WorldShader;
+import com.game.engine.ui.UIMesh;
 import com.game.engine.ui.UIRenderer;
 import com.game.engine.utils.OBJLoader;
 import com.game.engine.window.GameWindow;
@@ -26,10 +30,12 @@ public class Game implements IGameLogic {
 
 	private Player player;
 	private List<Enemy> enemies = new ArrayList<>();
+	private List<Entity> renderList = new ArrayList<>();
 
 	private Renderer renderer;
-	private ShaderProgram shader;
-	private ShaderProgram particleShader;
+	private WorldShader worldShader;
+	private UIShader uiShader;
+	private ParticleShader particleShader;
 	private Camera camera;
 	private Entity cube;
 	private UIRenderer ui;
@@ -37,69 +43,90 @@ public class Game implements IGameLogic {
 	private EnemySpawner spawner;
 	private ParticleEmitter particleEmitter;
 	private ParticleRenderer particleRenderer;
+	private Mesh particleMesh;
+	private Texture particleTexture;
+	private DirectionalLight light;
+	private Material material;
 
 	@Override
 	public void cleanup() {
-		shader.cleanup();
+		worldShader.cleanup();
+		uiShader.cleanup();
+		particleShader.cleanup();
 	}
 
 	@Override
 	public void init(GameWindow window) {
+
+		// SET UP START ----------------------------------------------
+
 		ui = new UIRenderer();
 		camera = new Camera();
 		spawner = new EnemySpawner();
+		spawner.setEnemies(enemies);
 
-		Mesh particleMesh = MeshFactory.createQuad();
+		worldShader = new WorldShader(ShaderProgram.load("assets/shaders/vertex.glsl"),
+				ShaderProgram.load("assets/shaders/fragment.glsl"));
+
+		uiShader = new UIShader(ShaderProgram.load("assets/ui/ui.vert"), ShaderProgram.load("assets/ui/ui.frag"));
+
+		particleShader = new ParticleShader(ShaderProgram.load("assets/particles/particle.vert"),
+				ShaderProgram.load("assets/particles/particle.frag"));
+
 		particleEmitter = new ParticleEmitter();
+		particleRenderer = new ParticleRenderer();
+
+		renderer = new Renderer(window.getWidth(), window.getHeight());
 
 		enemyMesh = OBJLoader.loadMesh("assets/models/sphere.obj");
 		playerMesh = OBJLoader.loadMesh("assets/models/plane.obj");
+
+		cube = new Entity(OBJLoader.loadMesh("assets/models/cube.obj"));
 
 		player = new Player(camera, new Entity(playerMesh));
 
 		player.getGun().setEmitter(particleEmitter);
 		spawner.setEmitter(particleEmitter);
 
-		player.getGun().setOnShoot(() -> {
-			ui.triggerCrosshairExpand();
-		});
+		// INIT SHADER, RENDERER, PARTICLE ---------------------------
 
-		enemies.add(new Enemy(new Vector3f(0, 1, -5), new Entity(enemyMesh)));
+		particleTexture = new Texture("assets/textures/particle.png");
+		particleMesh = MeshFactory.createQuad();
+		particleRenderer.setShader(particleShader);
+		particleRenderer.setQuad(particleMesh);
+		particleRenderer.setTexture(particleTexture);
 
-		enemies.add(new Enemy(new Vector3f(2, 1, -8), new Entity(enemyMesh)));
+		ui.setShader(uiShader);
+		ui.setQuad(new UIMesh());
 
-		renderer = new Renderer(800, 600);
+		// PBR
 
-		shader = new ShaderProgram();
-		shader.createVertexShader(ShaderProgram.load("assets/shaders/vertex.glsl"));
-		shader.createFragmentShader(ShaderProgram.load("assets/shaders/fragment.glsl"));
-		shader.link();
+		light = new DirectionalLight();
+		light.direction.set(-1f, -1f, -1f).normalize();
+		light.color.set(1f, 1f, 1f);
+		light.intensity = 1.0f;
 
-		shader.createUniform("projection");
-		shader.createUniform("view");
-		shader.createUniform("model");
+		material = new Material();
+		material.albedo.set(1, 0.7f, 0.6f);
+		material.ambient = 0.1f;
+		material.specular = 0.5f;
+		material.shininess = 32f;
 
-		cube = new Entity(OBJLoader.loadMesh("assets/models/cube.obj"));
+		cube.setMaterial(material);
+
+		renderer.setSceneLight(light);
+
+		cube.getModelMatrix().identity().translate(0, 0, -5);
+
+		// GUN CALLBACK ------------------------------------------------
+
+//		player.getGun().setOnShoot(() -> {
+//			ui.triggerCrosshairExpand();
+//		});
+
+		// MOUSE LOOK --------------------------------------------------
 
 		window.setCursorCallback(window.getHandle(), camera);
-
-		Texture texture = new Texture("assets/textures/fireball.png");
-		particleShader = new ShaderProgram();
-		particleShader.createVertexShader(ShaderProgram.load("assets/particles/particle.vert"));
-		particleShader.createFragmentShader(ShaderProgram.load("assets/particles/particle.frag"));
-		particleShader.link();
-		particleShader.createUniform("projection");
-		particleShader.createUniform("view");
-		particleShader.createUniform("particlePos");
-		particleShader.createUniform("size");
-		particleShader.createUniform("color");
-		particleShader.createUniform("rows");
-		particleShader.createUniform("cols");
-		particleShader.createUniform("frame");
-//		particleRenderer = new ParticleRenderer(particleMesh, particleShader);
-		particleRenderer = new ParticleRenderer(particleMesh, particleShader, texture);
-
-		particleEmitter.burst(new Vector3f(0, 1, -3), 50);
 	}
 
 	@Override
@@ -111,23 +138,27 @@ public class Game implements IGameLogic {
 	public void render(GameWindow window) {
 
 		renderer.clear();
+		renderList.clear();
 
-		// 3D rendering
-		renderer.render(cube, shader, camera);
+		renderList.add(cube);
 
-		// render enemies
-		for (Enemy enemy : enemies) {
-			renderer.render(enemy.getEntity(), shader, camera);
+		for (Enemy e : enemies) {
+			Entity entity = e.getEntity();
+			entity.setMaterial(material);
+			renderList.add(entity);
 		}
 
-//		particleRenderer.render(particleEmitter.getParticles(), camera.position);
-		particleRenderer.render(particleEmitter.getParticles(), renderer.getProjection(), camera.getViewMatrix());
+		// --- 3D PASS ---
+		renderer.submit(renderList, worldShader, camera);
+		renderer.renderPass();
 
-		// 🎯 UI Rendering (AFTER 3D)
-		ui.renderCrosshair(800, 600);
+		// --- PARTICLES ---
+		particleRenderer.submit(particleEmitter.getParticles(), renderer.getProjection(), camera.getViewMatrix());
+		particleRenderer.renderPass();
 
-		ui.renderHUD(800, 600, player.getHealth(), player.getGun().getAmmo(), player.getGun().getReserveAmmo());
-
+		// --- UI ---
+		ui.submit(window.getWidth(), window.getHeight(), player.getHealth(), player.getGun().getAmmo());
+		ui.renderPass();
 	}
 
 	@Override
@@ -137,13 +168,13 @@ public class Game implements IGameLogic {
 		float deltaTime = (now - lastTime) / 1_000_000_000f;
 		lastTime = now;
 
-		spawner.update(deltaTime, enemies, camera.position, new Entity(enemyMesh));
+		spawner.update(deltaTime, camera.position, new Entity(enemyMesh));
 
-		if (player.moving()) {
-			ui.updateCrosshair(deltaTime);
-		}
+//		if (player.moving()) {
+//			ui.update(deltaTime);
+//		}
 
-		for (Enemy e : enemies) {
+		for (Enemy e : spawner.getEnemies()) {
 			e.update(player);
 		}
 

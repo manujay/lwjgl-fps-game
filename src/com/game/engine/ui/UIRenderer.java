@@ -1,103 +1,74 @@
 package com.game.engine.ui;
 
-import org.lwjgl.opengl.GL11;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
-public class UIRenderer {
+import com.game.engine.renderer.AbstractRenderer;
+import com.game.engine.shader.UIShader;
 
-	private float crosshairSpread = 10f;
-	private float targetSpread = 10f;
+public class UIRenderer extends AbstractRenderer {
 
-	public void renderCrosshair(int width, int height) {
+	private UIShader shader;
+	private UIMesh quad;
 
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		GL11.glEnable(GL11.GL_BLEND);
+	private Matrix4f projection = new Matrix4f();
 
-		// ✅ RESET COLOR
-		GL11.glColor3f(1f, 1f, 1f);
+	private int width, height;
+	private int health, ammo;
 
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glLoadIdentity();
-		GL11.glOrtho(0, width, height, 0, -1, 1);
-
-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-		GL11.glLoadIdentity();
-
-		float cx = width / 2f;
-		float cy = height / 2f;
-
-		float size = 8f;
-		float spread = crosshairSpread;
-
-		GL11.glBegin(GL11.GL_LINES);
-
-		// Top
-		GL11.glVertex2f(cx, cy - spread);
-		GL11.glVertex2f(cx, cy - spread - size);
-
-		// Bottom
-		GL11.glVertex2f(cx, cy + spread);
-		GL11.glVertex2f(cx, cy + spread + size);
-
-		// Left
-		GL11.glVertex2f(cx - spread, cy);
-		GL11.glVertex2f(cx - spread - size, cy);
-
-		// Right
-		GL11.glVertex2f(cx + spread, cy);
-		GL11.glVertex2f(cx + spread + size, cy);
-
-		GL11.glEnd();
-
-		GL11.glDisable(GL11.GL_BLEND);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
+	@Override
+	protected void begin() {
+		disableDepth();
+		enableAlphaBlend();
 	}
 
-	public void renderHUD(int width, int height, int health, int ammo, int reserve) {
+	private void drawRect(float x, float y, float w, float h, Vector4f color) {
+//		shader.setUniform("color", color);
+		shader.setColor(color);
 
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		GL11.glEnable(GL11.GL_BLEND);
+		Matrix4f model = new Matrix4f().translate(x, y, 0).scale(w, h, 1);
 
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glLoadIdentity();
-		GL11.glOrtho(0, width, height, 0, -1, 1);
+//		shader.setUniform("projection", new Matrix4f(projection).mul(model));
+		shader.setProjection(new Matrix4f(projection).mul(model));
+		quad.render();
+	}
 
-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-		GL11.glLoadIdentity();
+	@Override
+	protected void end() {
+		enableDepth();
+		disableBlend();
+	}
+
+	@Override
+	protected void render() {
+
+		shader.bind();
+//		shader.setUniform("projection", projection);
+		shader.setProjection(projection);
 
 		// Health bar
-		float healthWidth = health * 2f;
-
-		GL11.glBegin(GL11.GL_QUADS);
-		GL11.glVertex2f(20, height - 40);
-		GL11.glVertex2f(20 + healthWidth, height - 40);
-		GL11.glVertex2f(20 + healthWidth, height - 20);
-		GL11.glVertex2f(20, height - 20);
-		GL11.glEnd();
+		drawRect(20, height - 40, health * 2f, 20, new Vector4f(1, 0, 0, 1));
 
 		// Ammo bar
-		float ammoWidth = ammo * 5f;
+		drawRect(width - 150, height - 40, ammo * 5f, 20, new Vector4f(1, 1, 0, 1));
 
-		GL11.glBegin(GL11.GL_QUADS);
-		GL11.glVertex2f(width - 150, height - 40);
-		GL11.glVertex2f(width - 150 + ammoWidth, height - 40);
-		GL11.glVertex2f(width - 150 + ammoWidth, height - 20);
-		GL11.glVertex2f(width - 150, height - 20);
-		GL11.glEnd();
-
-		GL11.glDisable(GL11.GL_BLEND);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		shader.unbind();
 	}
 
-	public void triggerCrosshairExpand() {
-		targetSpread = 25f + (float) (Math.random() * 5f); // expand on shooting
+	public void setQuad(UIMesh quad) {
+		this.quad = quad;
 	}
 
-	public void updateCrosshair(float deltaTime) {
-		// Smooth interpolation back to normal
-		float speed = 10f;
-		crosshairSpread += (targetSpread - crosshairSpread) * speed * deltaTime;
+	public void setShader(UIShader shader) {
+		this.shader = shader;
+	}
 
-		// Slowly return to default
-		targetSpread = 10f;
+	public void submit(int w, int h, int health, int ammo) {
+		this.width = w;
+		this.height = h;
+		this.health = health;
+		this.ammo = ammo;
+
+		projection.setOrtho2D(0, w, h, 0);
 	}
 }

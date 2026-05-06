@@ -11,7 +11,6 @@ uniform mat4 view;
 uniform vec3 particlePos;
 uniform float size;
 
-// atlas
 uniform int rows;
 uniform int cols;
 uniform int frame;
@@ -25,13 +24,14 @@ void main() {
         + right * position.x * size
         + up    * position.y * size;
 
-    // atlas UV calc
-    float col = float(frame % cols);
-    float row = float(frame / cols);
+    // ✅ FIXED atlas math
+    float f = float(frame);
+    float col = mod(f, float(cols));
+    float row = floor(f / float(cols));
 
     vec2 atlasUV = vec2(
-        (texCoord.x + col) / cols,
-        (texCoord.y + row) / rows
+        (texCoord.x + col) / float(cols),
+        (texCoord.y + row) / float(rows)
     );
 
     passUV = atlasUV;

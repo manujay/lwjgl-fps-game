@@ -5,7 +5,7 @@ import java.util.Random;
 
 import org.joml.Vector3f;
 
-import com.game.engine.graphics.mesh.Entity;
+import com.game.engine.graphics.texture.Entity;
 import com.game.engine.particles.ParticleEmitter;
 import com.game.game.Enemy;
 
@@ -22,8 +22,14 @@ public class EnemySpawner {
 
 	private ParticleEmitter emitter;
 
+	private List<Enemy> enemies;
+
 	public ParticleEmitter getEmitter() {
 		return emitter;
+	}
+
+	public List<Enemy> getEnemies() {
+		return enemies;
 	}
 
 	private Vector3f getSpawnPosition(Vector3f playerPos) {
@@ -41,7 +47,11 @@ public class EnemySpawner {
 		this.emitter = emitter;
 	}
 
-	public void update(float deltaTime, List<Enemy> enemies, Vector3f playerPos, Entity enemyTemplate) {
+	public void setEnemies(List<Enemy> enemies) {
+		this.enemies = enemies;
+	}
+
+	public void update(float deltaTime, Vector3f playerPos, Entity enemyTemplate) {
 
 		timer += deltaTime;
 
