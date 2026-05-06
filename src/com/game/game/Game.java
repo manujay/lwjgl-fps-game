@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.game.engine.graphics.Camera;
+import com.game.engine.graphics.light.DirectionalLight;
+import com.game.engine.graphics.material.Material;
 import com.game.engine.graphics.mesh.Mesh;
 import com.game.engine.graphics.mesh.MeshFactory;
 import com.game.engine.graphics.texture.Entity;
@@ -40,9 +42,11 @@ public class Game implements IGameLogic {
 	private long lastTime = System.nanoTime();
 	private EnemySpawner spawner;
 	private ParticleEmitter particleEmitter;
-	public ParticleRenderer particleRenderer;
-	public Mesh particleMesh;
-	public Texture particleTexture;
+	private ParticleRenderer particleRenderer;
+	private Mesh particleMesh;
+	private Texture particleTexture;
+	private DirectionalLight light;
+	private Material material;
 
 	@Override
 	public void cleanup() {
@@ -95,6 +99,25 @@ public class Game implements IGameLogic {
 		ui.setShader(uiShader);
 		ui.setQuad(new UIMesh());
 
+		// PBR
+
+		light = new DirectionalLight();
+		light.direction.set(-1f, -1f, -1f).normalize();
+		light.color.set(1f, 1f, 1f);
+		light.intensity = 1.0f;
+
+		material = new Material();
+		material.albedo.set(1, 0.7f, 0.6f);
+		material.ambient = 0.1f;
+		material.specular = 0.5f;
+		material.shininess = 32f;
+
+		cube.setMaterial(material);
+
+		renderer.setSceneLight(light);
+
+		cube.getModelMatrix().identity().translate(0, 0, -5);
+
 		// GUN CALLBACK ------------------------------------------------
 
 //		player.getGun().setOnShoot(() -> {
@@ -117,11 +140,13 @@ public class Game implements IGameLogic {
 		renderer.clear();
 		renderList.clear();
 
-		for (Enemy e : enemies) {
-			renderList.add(e.getEntity());
-		}
-
 		renderList.add(cube);
+
+		for (Enemy e : enemies) {
+			Entity entity = e.getEntity();
+			entity.setMaterial(material);
+			renderList.add(entity);
+		}
 
 		// --- 3D PASS ---
 		renderer.submit(renderList, worldShader, camera);

@@ -6,6 +6,7 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import com.game.engine.graphics.Camera;
+import com.game.engine.graphics.light.DirectionalLight;
 import com.game.engine.graphics.texture.Entity;
 import com.game.engine.shader.WorldShader;
 
@@ -13,6 +14,7 @@ public class Renderer extends AbstractRenderer {
 
 	private WorldShader shader;
 	private Camera camera;
+	private DirectionalLight sceneLight;
 	private List<Entity> entities;
 
 	private Matrix4f projection;
@@ -52,18 +54,21 @@ public class Renderer extends AbstractRenderer {
 
 		shader.bind();
 
-//		shader.setUniform("projection", projection);
-//		shader.setUniform("view", camera.getViewMatrix());
+		// FRAME
+		shader.setProjection(projection);
+		shader.setCamera(camera.position);
+		shader.setLight(sceneLight);
 
+		// OBJECTS
 		for (Entity entity : entities) {
-
-//			shader.setUniform("model", entity.getModelMatrix());
-			shader.setMatrices(projection, camera.getViewMatrix(), entity.getModelMatrix());
-
+			shader.setModel(entity.getModelMatrix());
+			shader.setMaterial(entity.getMaterial());
 			entity.getMesh().render();
 		}
+	}
 
-		shader.unbind();
+	public void setSceneLight(DirectionalLight sceneLight) {
+		this.sceneLight = sceneLight;
 	}
 
 	// Submit data for this frame
